@@ -1,62 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState} from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Header from './components/Header'
 import OffersSection from './components/OffersSection'
 import BottomNavigation from './components/BottomNavigation'
 import WishlistPage from './components/WishlistPage'
 import CategoryPage from './components/CategoryPage'
-import { mockUserLocation, calculateDistance } from './utils/locationUtils'
-import { 
-  topOffers, 
-  groceryDeals, 
-  pharmacySpecials, 
-  dailyEssentials 
-} from './data/offerData'
+import {topOffers, groceryDeals, pharmacySpecials, dailyEssentials} from './data/offerData'
 
 function App() {
-  const [userLocation, setUserLocation] = useState(null)
-  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeCategory, setActiveCategory] = useState('all')
   const [wishlist, setWishlist] = useState([])
-  const [nearbyOffers, setNearbyOffers] = useState({
-    topOffers: [],
-    groceryDeals: [],
-    pharmacySpecials: [],
-    dailyEssentials: []
-  })
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const location = mockUserLocation()
-      setUserLocation(location)
-      setLoading(false)
-      
-      const calculateOffersWithDistance = (offers) => {
-        return offers.map(offer => ({
-          ...offer,
-          distance: calculateDistance(location, offer.retailer.location)
-        })).sort((a, b) => a.distance - b.distance)
-      }
-      
-      setNearbyOffers({
-        topOffers: calculateOffersWithDistance(topOffers),
-        groceryDeals: calculateOffersWithDistance(groceryDeals),
-        pharmacySpecials: calculateOffersWithDistance(pharmacySpecials),
-        dailyEssentials: calculateOffersWithDistance(dailyEssentials)
-      })
-    }, 1000)
-    
-    return () => clearTimeout(timer)
-  }, [])
 
   const toggleWishlist = (offer) => {
     setWishlist(prev => {
       const isInWishlist = prev.some(item => item.id === offer.id)
-      if (isInWishlist) {
-        return prev.filter(item => item.id !== offer.id)
-      }
-      return [...prev, offer]
+      return isInWishlist ? prev.filter(item => item.id !== offer.id) : [...prev, offer]
     })
   }
 
@@ -69,65 +28,56 @@ function App() {
     )
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
-      </div>
-    )
-  }
-
   const HomePage = () => (
     <>
       <Header 
-        userLocation={userLocation}
         onSearch={setSearchTerm}
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
       />
-      
+
       <main className="px-4 pt-4 pb-20">
         {activeCategory === 'all' && (
           <OffersSection 
             title="Top Offers Near You" 
-            offers={filterOffersBySearch(nearbyOffers.topOffers)} 
+            offers={filterOffersBySearch(topOffers)} 
             highlight={true}
             onWishlist={toggleWishlist}
             wishlist={wishlist}
           />
         )}
-        
+
         {(activeCategory === 'all' || activeCategory === 'groceries') && (
           <OffersSection 
             title="Grocery Deals" 
-            offers={filterOffersBySearch(nearbyOffers.groceryDeals)} 
+            offers={filterOffersBySearch(groceryDeals)} 
             categoryColor="bg-success-500"
             onWishlist={toggleWishlist}
             wishlist={wishlist}
           />
         )}
-        
+
         {(activeCategory === 'all' || activeCategory === 'pharmacy') && (
           <OffersSection 
             title="Pharmacy Specials" 
-            offers={filterOffersBySearch(nearbyOffers.pharmacySpecials)}
+            offers={filterOffersBySearch(pharmacySpecials)}
             categoryColor="bg-secondary-500"
             onWishlist={toggleWishlist}
             wishlist={wishlist}
           />
         )}
-        
+
         {(activeCategory === 'all' || activeCategory === 'daily') && (
           <OffersSection 
             title="Daily Essentials" 
-            offers={filterOffersBySearch(nearbyOffers.dailyEssentials)}
+            offers={filterOffersBySearch(dailyEssentials)}
             categoryColor="bg-accent-500"
             onWishlist={toggleWishlist}
             wishlist={wishlist}
           />
         )}
       </main>
-      
+
       <BottomNavigation />
     </>
   )
@@ -150,7 +100,12 @@ function App() {
             path="/category/:category" 
             element={
               <CategoryPage 
-                offers={nearbyOffers}
+                offers={{
+                  topOffers,
+                  groceryDeals,
+                  pharmacySpecials,
+                  dailyEssentials
+                }}
                 onWishlist={toggleWishlist}
                 wishlist={wishlist}
                 searchTerm={searchTerm}
