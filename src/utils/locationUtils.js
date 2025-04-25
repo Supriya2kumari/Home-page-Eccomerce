@@ -1,5 +1,3 @@
-// Utility functions for location-based features
-
 export const mockUserLocation = () => {
   const baseLat = 37.7749
   const baseLng = -122.4194
